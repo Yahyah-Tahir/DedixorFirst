@@ -1,37 +1,33 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2, Lock } from "lucide-react"
-import { loginAction } from "./actions"
+import { useState } from 'react'
+import { loginAction } from './actions'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Loader2, Lock } from 'lucide-react'
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
+    setError('')
     setLoading(true)
 
     try {
       const result = await loginAction(email, password)
       
-      if (result.success) {
-        router.push("/admin")
-        router.refresh()
-      } else {
-        setError(result.error || "Login failed")
+      if (!result.success) {
+        setError(result.error || 'Login failed')
       }
-    } catch {
-      setError("An unexpected error occurred")
+    } catch (err) {
+      console.error('[v0] Login error:', err)
+      setError('An unexpected error occurred')
     } finally {
       setLoading(false)
     }
@@ -92,14 +88,15 @@ export default function AdminLoginPage() {
                   Signing in...
                 </>
               ) : (
-                "Sign In"
+                'Sign In'
               )}
             </Button>
           </form>
           
-          <div className="mt-4 text-center text-sm text-muted-foreground">
-            <p>Email: admin@dedixor.com</p>
-            <p>Password: admin123</p>
+          <div className="mt-4 pt-4 border-t text-center text-sm text-muted-foreground">
+            <p className="font-semibold mb-2">Demo Credentials:</p>
+            <p>Email: <span className="font-mono text-foreground">admin@dedixor.com</span></p>
+            <p>Password: <span className="font-mono text-foreground">admin123</span></p>
           </div>
         </CardContent>
       </Card>

@@ -7,13 +7,17 @@ const SESSION_MAX_AGE = 60 * 60 * 24 * 7 // 7 days
 
 // Hash password using bcrypt
 export async function hashPassword(password: string): Promise<string> {
-  const salt = await bcrypt.genSalt(10)
-  return bcrypt.hash(password, salt)
+  return bcrypt.hash(password, 10)
 }
 
 // Verify password using bcrypt
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash)
+  try {
+    return await bcrypt.compare(password, hash)
+  } catch (error) {
+    console.error('[v0] Password verification error:', error)
+    return false
+  }
 }
 
 // Session management
@@ -31,13 +35,16 @@ export async function createSession(adminId: number): Promise<void> {
 export async function getSession(): Promise<{ adminId: number } | null> {
   const cookieStore = await cookies()
   const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)
-  
+
   if (!sessionCookie?.value) {
     return null
   }
-  
+
   try {
-    const adminId = parseInt(sessionCookie.value)
+    const adminId = parseInt(sessionCookie.value, 10)
+    if (isNaN(adminId)) {
+      return null
+    }
     return { adminId }
   } catch {
     return null
@@ -54,21 +61,25 @@ export async function isAuthenticated(): Promise<boolean> {
   return session !== null
 }
 
-// Auth actions
+// Login action
 export async function login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
   try {
+    if (!email || !password) {
+      return { success: false, error: 'Email and password are required' }
+    }
+
     const admin = await db.admins.findByEmail(email)
-    
+
     if (!admin) {
       return { success: false, error: 'Invalid email or password' }
     }
-    
-    const isValid = await verifyPassword(password, admin.password_hash)
-    
-    if (!isValid) {
+
+    const isPasswordValid = await verifyPassword(password, admin.password_hash)
+
+    if (!isPasswordValid) {
       return { success: false, error: 'Invalid email or password' }
     }
-    
+
     await createSession(admin.id)
     return { success: true }
   } catch (error) {
@@ -77,6 +88,7 @@ export async function login(email: string, password: string): Promise<{ success:
   }
 }
 
+// Logout action
 export async function logout(): Promise<void> {
   await destroySession()
 }
