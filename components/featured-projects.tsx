@@ -33,10 +33,10 @@ export function FeaturedProjects() {
             id: p.id,
             title: p.title,
             description: p.description,
-            tech: p.tech,
+            tech: p.tech_stack || [],
             image: p.image,
-            liveDemo: p.liveDemo,
-            github: p.github,
+            liveDemo: p.live_url,
+            github: p.github_url,
           }))
           setProjects(featured)
         }

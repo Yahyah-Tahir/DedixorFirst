@@ -2,6 +2,23 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { projectSchema } from "@/lib/validations"
 
+// Transform database project to API format
+function transformProject(p: any) {
+  return {
+    id: String(p.id),
+    title: p.title,
+    description: p.description || "",
+    category: p.category || "Full-Stack",
+    image: p.image || "/placeholder.svg",
+    tech: p.tech_stack || [],
+    techStack: p.tech_stack || [],
+    liveDemo: p.live_url,
+    github: p.github_url,
+    year: p.created_at ? new Date(p.created_at).getFullYear().toString() : new Date().getFullYear().toString(),
+    featured: p.featured,
+  }
+}
+
 // GET /api/projects - Fetch all projects with optional category filter
 export async function GET(request: Request) {
   try {
@@ -10,9 +27,12 @@ export async function GET(request: Request) {
 
     const projects = await db.projects.findMany(category ? { category: category as any } : undefined)
 
+    // Transform to frontend format
+    const transformedProjects = projects.map(transformProject)
+
     return NextResponse.json({
       success: true,
-      data: projects,
+      data: transformedProjects,
     })
   } catch (error) {
     console.error("[v0] Error fetching projects:", error)
@@ -34,7 +54,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: true,
-        data: project,
+        data: transformProject(project),
       },
       { status: 201 },
     )

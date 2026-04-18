@@ -2,11 +2,34 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { updateProjectSchema } from "@/lib/validations"
 
+// Transform database project to API format
+function transformProject(p: any) {
+  return {
+    id: String(p.id),
+    title: p.title,
+    description: p.description || "",
+    category: p.category || "Full-Stack",
+    image: p.image || "/placeholder.svg",
+    tech: p.tech_stack || [],
+    techStack: p.tech_stack || [],
+    liveDemo: p.live_url,
+    github: p.github_url,
+    year: p.created_at ? new Date(p.created_at).getFullYear().toString() : new Date().getFullYear().toString(),
+    featured: p.featured,
+  }
+}
+
 // GET /api/projects/:id - Fetch a single project
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const project = await db.projects.findById(id)
+    const numericId = parseInt(id, 10)
+    
+    if (isNaN(numericId)) {
+      return NextResponse.json({ success: false, error: "Invalid project ID" }, { status: 400 })
+    }
+    
+    const project = await db.projects.findById(numericId)
 
     if (!project) {
       return NextResponse.json({ success: false, error: "Project not found" }, { status: 404 })
@@ -14,7 +37,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     return NextResponse.json({
       success: true,
-      data: project,
+      data: transformProject(project),
     })
   } catch (error) {
     console.error("[v0] Error fetching project:", error)
@@ -26,13 +49,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
+    const numericId = parseInt(id, 10)
+    
+    if (isNaN(numericId)) {
+      return NextResponse.json({ success: false, error: "Invalid project ID" }, { status: 400 })
+    }
+    
     const body = await request.json()
 
     // Validate input
-    const validatedData = updateProjectSchema.parse({ ...body, id })
+    const validatedData = updateProjectSchema.parse({ ...body, id: numericId })
 
     // Update project
-    const project = await db.projects.update(id, validatedData)
+    const project = await db.projects.update(numericId, validatedData)
 
     if (!project) {
       return NextResponse.json({ success: false, error: "Project not found" }, { status: 404 })
@@ -40,7 +69,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     return NextResponse.json({
       success: true,
-      data: project,
+      data: transformProject(project),
     })
   } catch (error: any) {
     console.error("[v0] Error updating project:", error)
@@ -57,7 +86,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const success = await db.projects.delete(id)
+    const numericId = parseInt(id, 10)
+    
+    if (isNaN(numericId)) {
+      return NextResponse.json({ success: false, error: "Invalid project ID" }, { status: 400 })
+    }
+    
+    const success = await db.projects.delete(numericId)
 
     if (!success) {
       return NextResponse.json({ success: false, error: "Project not found" }, { status: 404 })
