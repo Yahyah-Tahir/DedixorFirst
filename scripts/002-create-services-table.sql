@@ -1,0 +1,12 @@
+-- Create services table
+CREATE TABLE IF NOT EXISTS services (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  description TEXT NOT NULL,
+  icon VARCHAR(50) NOT NULL,
+  details TEXT[] NOT NULL DEFAULT '{}',
+  pricing VARCHAR(100) NOT NULL,
+  gradient VARCHAR(200) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
