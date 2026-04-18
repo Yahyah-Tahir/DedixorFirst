@@ -16,33 +16,30 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Pencil, Trash2, ArrowUpDown } from "lucide-react"
-import type { AdminProject } from "@/types/admin"
-import Image from "next/image"
+import type { AdminService } from "@/types/admin"
 
-interface ProjectsTableProps {
-  projects: AdminProject[]
-  onEdit: (project: AdminProject) => void
+interface ServicesTableProps {
+  services: AdminService[]
+  onEdit: (service: AdminService) => void
   onDelete: (id: number) => void
 }
 
-export function ProjectsTable({ projects, onEdit, onDelete }: ProjectsTableProps) {
+export function ServicesTable({ services, onEdit, onDelete }: ServicesTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
-  const columns: ColumnDef<AdminProject>[] = [
+  const columns: ColumnDef<AdminService>[] = [
     {
-      accessorKey: "image",
-      header: "Image",
-      cell: ({ row }) => (
-        <div className="relative h-12 w-20 rounded-md overflow-hidden bg-muted">
-          <Image
-            src={row.getValue("image") || "/placeholder.svg"}
-            alt={row.original.title}
-            fill
-            className="object-cover"
-          />
-        </div>
-      ),
+      accessorKey: "icon",
+      header: "Icon",
+      cell: ({ row }) => {
+        const icon = row.getValue("icon") as string | null
+        return (
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            {icon || "?"}
+          </div>
+        )
+      },
     },
     {
       accessorKey: "title",
@@ -66,38 +63,6 @@ export function ProjectsTable({ projects, onEdit, onDelete }: ProjectsTableProps
       ),
     },
     {
-      accessorKey: "category",
-      header: "Category",
-      cell: ({ row }) => {
-        const category = row.getValue("category") as string | null
-        return category ? <Badge variant="secondary">{category}</Badge> : <span className="text-muted-foreground">-</span>
-      },
-    },
-    {
-      accessorKey: "tech_stack",
-      header: "Tech Stack",
-      cell: ({ row }) => {
-        const tech = row.getValue("tech_stack") as string[] | null
-        if (!tech || tech.length === 0) {
-          return <span className="text-muted-foreground">-</span>
-        }
-        return (
-          <div className="flex flex-wrap gap-1 max-w-[200px]">
-            {tech.slice(0, 2).map((t) => (
-              <span key={t} className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                {t}
-              </span>
-            ))}
-            {tech.length > 2 && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                +{tech.length - 2}
-              </span>
-            )}
-          </div>
-        )
-      },
-    },
-    {
       accessorKey: "featured",
       header: "Featured",
       cell: ({ row }) => {
@@ -108,17 +73,17 @@ export function ProjectsTable({ projects, onEdit, onDelete }: ProjectsTableProps
     {
       id: "actions",
       cell: ({ row }) => {
-        const project = row.original
+        const service = row.original
         return (
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => onEdit(project)}>
+            <Button variant="ghost" size="icon" onClick={() => onEdit(service)}>
               <Pencil className="h-4 w-4" />
               <span className="sr-only">Edit</span>
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => onDelete(project.id)}
+              onClick={() => onDelete(service.id)}
               className="text-destructive hover:text-destructive"
             >
               <Trash2 className="h-4 w-4" />
@@ -131,7 +96,7 @@ export function ProjectsTable({ projects, onEdit, onDelete }: ProjectsTableProps
   ]
 
   const table = useReactTable({
-    data: projects,
+    data: services,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -149,7 +114,7 @@ export function ProjectsTable({ projects, onEdit, onDelete }: ProjectsTableProps
       {/* Search */}
       <div className="flex items-center gap-4">
         <Input
-          placeholder="Search projects..."
+          placeholder="Search services..."
           value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
           onChange={(event) => table.getColumn("title")?.setFilterValue(event.target.value)}
           className="max-w-sm"
@@ -182,7 +147,7 @@ export function ProjectsTable({ projects, onEdit, onDelete }: ProjectsTableProps
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No projects found.
+                  No services found.
                 </TableCell>
               </TableRow>
             )}

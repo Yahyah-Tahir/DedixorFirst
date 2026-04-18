@@ -46,7 +46,7 @@ export default function AdminProjectsPage() {
     setModalOpen(true)
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     if (confirm("Are you sure you want to delete this project?")) {
       // Optimistic update
       const previousProjects = [...projects]
@@ -75,7 +75,16 @@ export default function AdminProjectsPage() {
     try {
       if (editingProject) {
         // Update existing
-        const result = await updateProject(project.id, project)
+        const result = await updateProject(project.id, {
+          title: project.title,
+          description: project.description,
+          category: project.category,
+          image: project.image,
+          tech_stack: project.tech_stack,
+          live_url: project.live_url,
+          github_url: project.github_url,
+          featured: project.featured,
+        })
 
         if (result.success && result.data) {
           setProjects(projects.map((p) => (p.id === project.id ? (result.data as AdminProject) : p)))
@@ -93,10 +102,19 @@ export default function AdminProjectsPage() {
         }
       } else {
         // Create new
-        const result = await createProject(project)
+        const result = await createProject({
+          title: project.title,
+          description: project.description,
+          category: project.category,
+          image: project.image,
+          tech_stack: project.tech_stack,
+          live_url: project.live_url,
+          github_url: project.github_url,
+          featured: project.featured,
+        })
 
         if (result.success && result.data) {
-          setProjects([...projects, result.data as AdminProject])
+          setProjects([result.data as AdminProject, ...projects])
           toast({
             title: "Success",
             description: "Project created successfully",
@@ -114,7 +132,7 @@ export default function AdminProjectsPage() {
       setModalOpen(false)
       setEditingProject(undefined)
     } catch (error) {
-      console.error("[v0] Error saving project:", error)
+      console.error("[Admin] Error saving project:", error)
       toast({
         title: "Error",
         description: "An unexpected error occurred",

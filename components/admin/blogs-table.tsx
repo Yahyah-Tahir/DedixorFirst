@@ -15,35 +15,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Pencil, Trash2, ArrowUpDown } from "lucide-react"
-import type { AdminProject } from "@/types/admin"
-import Image from "next/image"
+import { Pencil, Trash2, ArrowUpDown, Eye } from "lucide-react"
+import type { AdminBlog } from "@/types/admin"
+import Link from "next/link"
 
-interface ProjectsTableProps {
-  projects: AdminProject[]
-  onEdit: (project: AdminProject) => void
+interface BlogsTableProps {
+  blogs: AdminBlog[]
+  onEdit: (blog: AdminBlog) => void
   onDelete: (id: number) => void
 }
 
-export function ProjectsTable({ projects, onEdit, onDelete }: ProjectsTableProps) {
+export function BlogsTable({ blogs, onEdit, onDelete }: BlogsTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
-  const columns: ColumnDef<AdminProject>[] = [
-    {
-      accessorKey: "image",
-      header: "Image",
-      cell: ({ row }) => (
-        <div className="relative h-12 w-20 rounded-md overflow-hidden bg-muted">
-          <Image
-            src={row.getValue("image") || "/placeholder.svg"}
-            alt={row.original.title}
-            fill
-            className="object-cover"
-          />
-        </div>
-      ),
-    },
+  const columns: ColumnDef<AdminBlog>[] = [
     {
       accessorKey: "title",
       header: ({ column }) => {
@@ -59,66 +45,69 @@ export function ProjectsTable({ projects, onEdit, onDelete }: ProjectsTableProps
         )
       },
       cell: ({ row }) => (
-        <div className="max-w-[300px]">
+        <div className="max-w-[400px]">
           <div className="font-semibold">{row.getValue("title")}</div>
-          <div className="text-sm text-muted-foreground line-clamp-1">{row.original.description}</div>
+          <div className="text-sm text-muted-foreground line-clamp-1">{row.original.excerpt}</div>
         </div>
       ),
     },
     {
-      accessorKey: "category",
-      header: "Category",
+      accessorKey: "slug",
+      header: "Slug",
+      cell: ({ row }) => (
+        <code className="text-sm bg-muted px-2 py-1 rounded">{row.getValue("slug")}</code>
+      ),
+    },
+    {
+      accessorKey: "author",
+      header: "Author",
       cell: ({ row }) => {
-        const category = row.getValue("category") as string | null
-        return category ? <Badge variant="secondary">{category}</Badge> : <span className="text-muted-foreground">-</span>
+        const author = row.getValue("author") as string | null
+        return author || <span className="text-muted-foreground">-</span>
       },
     },
     {
-      accessorKey: "tech_stack",
-      header: "Tech Stack",
+      accessorKey: "published",
+      header: "Status",
       cell: ({ row }) => {
-        const tech = row.getValue("tech_stack") as string[] | null
-        if (!tech || tech.length === 0) {
-          return <span className="text-muted-foreground">-</span>
-        }
-        return (
-          <div className="flex flex-wrap gap-1 max-w-[200px]">
-            {tech.slice(0, 2).map((t) => (
-              <span key={t} className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                {t}
-              </span>
-            ))}
-            {tech.length > 2 && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                +{tech.length - 2}
-              </span>
-            )}
-          </div>
+        const published = row.getValue("published") as boolean
+        return published ? (
+          <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20">Published</Badge>
+        ) : (
+          <Badge variant="secondary">Draft</Badge>
         )
       },
     },
     {
-      accessorKey: "featured",
-      header: "Featured",
+      accessorKey: "published_at",
+      header: "Published At",
       cell: ({ row }) => {
-        const featured = row.getValue("featured") as boolean
-        return featured ? <Badge>Featured</Badge> : <span className="text-muted-foreground">No</span>
+        const date = row.getValue("published_at") as Date | null
+        return date ? new Date(date).toLocaleDateString() : <span className="text-muted-foreground">-</span>
       },
     },
     {
       id: "actions",
       cell: ({ row }) => {
-        const project = row.original
+        const blog = row.original
         return (
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => onEdit(project)}>
+            {blog.published && (
+              <Button variant="ghost" size="icon" asChild>
+                <Link href={`/blogs/${blog.slug}`} target="_blank">
+                  <Eye className="h-4 w-4" />
+                  <span className="sr-only">View</span>
+                </Link>
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" onClick={() => onEdit(blog)}>
               <Pencil className="h-4 w-4" />
               <span className="sr-only">Edit</span>
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => onDelete(project.id)}
+              onClick={() => onDelete(blog.id)}
               className="text-destructive hover:text-destructive"
             >
               <Trash2 className="h-4 w-4" />
@@ -131,7 +120,7 @@ export function ProjectsTable({ projects, onEdit, onDelete }: ProjectsTableProps
   ]
 
   const table = useReactTable({
-    data: projects,
+    data: blogs,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -149,7 +138,7 @@ export function ProjectsTable({ projects, onEdit, onDelete }: ProjectsTableProps
       {/* Search */}
       <div className="flex items-center gap-4">
         <Input
-          placeholder="Search projects..."
+          placeholder="Search blogs..."
           value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
           onChange={(event) => table.getColumn("title")?.setFilterValue(event.target.value)}
           className="max-w-sm"
@@ -182,7 +171,7 @@ export function ProjectsTable({ projects, onEdit, onDelete }: ProjectsTableProps
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No projects found.
+                  No blogs found.
                 </TableCell>
               </TableRow>
             )}

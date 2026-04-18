@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -15,27 +14,26 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { X, Upload } from "lucide-react"
-import { useState } from "react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { X } from "lucide-react"
 import type { AdminProject } from "@/types/admin"
 
-const projectSchema = z.object({
+const projectFormSchema = z.object({
   title: z.string().min(1, "Title is required").max(100),
-  description: z.string().min(10, "Description must be at least 10 characters").max(500),
-  image: z.string().url("Must be a valid URL"),
-  tech: z.array(z.string()).min(1, "At least one technology is required"),
-  category: z.enum(["Rust", "Next.js", "Full-Stack", "All"]),
-  year: z.string().min(4).max(4),
-  liveDemo: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  github: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  description: z.string().max(500).optional(),
+  image: z.string().optional(),
+  tech_stack: z.array(z.string()).optional(),
+  category: z.string().optional(),
+  live_url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  github_url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  featured: z.boolean().optional().default(false),
 })
 
-type ProjectFormValues = z.infer<typeof projectSchema>
+type ProjectFormValues = z.infer<typeof projectFormSchema>
 
 interface ProjectModalProps {
   open: boolean
@@ -49,16 +47,16 @@ export function ProjectModal({ open, onOpenChange, project, onSave }: ProjectMod
   const [imagePreview, setImagePreview] = useState<string | null>(null)
 
   const form = useForm<ProjectFormValues>({
-    resolver: zodResolver(projectSchema),
+    resolver: zodResolver(projectFormSchema),
     defaultValues: {
       title: "",
       description: "",
       image: "",
-      tech: [],
-      category: "All",
-      year: new Date().getFullYear().toString(),
-      liveDemo: "",
-      github: "",
+      tech_stack: [],
+      category: "",
+      live_url: "",
+      github_url: "",
+      featured: false,
     },
   })
 
@@ -66,25 +64,25 @@ export function ProjectModal({ open, onOpenChange, project, onSave }: ProjectMod
     if (project) {
       form.reset({
         title: project.title,
-        description: project.description,
-        image: project.image,
-        tech: project.tech,
-        category: project.category as any,
-        year: project.year,
-        liveDemo: project.liveDemo || "",
-        github: project.github || "",
+        description: project.description || "",
+        image: project.image || "",
+        tech_stack: project.tech_stack || [],
+        category: project.category || "",
+        live_url: project.live_url || "",
+        github_url: project.github_url || "",
+        featured: project.featured || false,
       })
-      setImagePreview(project.image)
+      setImagePreview(project.image || null)
     } else {
       form.reset({
         title: "",
         description: "",
         image: "",
-        tech: [],
-        category: "All",
-        year: new Date().getFullYear().toString(),
-        liveDemo: "",
-        github: "",
+        tech_stack: [],
+        category: "",
+        live_url: "",
+        github_url: "",
+        featured: false,
       })
       setImagePreview(null)
     }
@@ -92,27 +90,32 @@ export function ProjectModal({ open, onOpenChange, project, onSave }: ProjectMod
 
   const onSubmit = (values: ProjectFormValues) => {
     onSave({
-      ...values,
-      id: project?.id || "",
-      liveDemo: values.liveDemo || undefined,
-      github: values.github || undefined,
+      id: project?.id || 0,
+      title: values.title,
+      description: values.description || null,
+      image: values.image || null,
+      tech_stack: values.tech_stack || null,
+      category: values.category || null,
+      live_url: values.live_url || null,
+      github_url: values.github_url || null,
+      featured: values.featured || false,
     })
   }
 
   const addTech = () => {
     if (techInput.trim()) {
-      const currentTech = form.getValues("tech")
+      const currentTech = form.getValues("tech_stack") || []
       if (!currentTech.includes(techInput.trim())) {
-        form.setValue("tech", [...currentTech, techInput.trim()])
+        form.setValue("tech_stack", [...currentTech, techInput.trim()])
       }
       setTechInput("")
     }
   }
 
   const removeTech = (tech: string) => {
-    const currentTech = form.getValues("tech")
+    const currentTech = form.getValues("tech_stack") || []
     form.setValue(
-      "tech",
+      "tech_stack",
       currentTech.filter((t) => t !== tech),
     )
   }
@@ -172,7 +175,7 @@ export function ProjectModal({ open, onOpenChange, project, onSave }: ProjectMod
               )}
             />
 
-            {/* Image Upload */}
+            {/* Image */}
             <FormField
               control={form.control}
               name="image"
@@ -192,9 +195,6 @@ export function ProjectModal({ open, onOpenChange, project, onSave }: ProjectMod
                       )}
                       <div className="flex gap-2">
                         <Input type="file" accept="image/*" onChange={handleImageChange} className="flex-1" />
-                        <Button type="button" variant="outline" size="icon" disabled>
-                          <Upload className="h-4 w-4" />
-                        </Button>
                       </div>
                       <Input
                         placeholder="Or enter image URL"
@@ -214,7 +214,7 @@ export function ProjectModal({ open, onOpenChange, project, onSave }: ProjectMod
             {/* Tech Stack */}
             <FormField
               control={form.control}
-              name="tech"
+              name="tech_stack"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tech Stack</FormLabel>
@@ -237,7 +237,7 @@ export function ProjectModal({ open, onOpenChange, project, onSave }: ProjectMod
                         </Button>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {field.value.map((tech) => (
+                        {(field.value || []).map((tech) => (
                           <Badge key={tech} variant="secondary" className="gap-1">
                             {tech}
                             <button
@@ -265,44 +265,33 @@ export function ProjectModal({ open, onOpenChange, project, onSave }: ProjectMod
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="All">All</SelectItem>
-                        <SelectItem value="Rust">Rust</SelectItem>
-                        <SelectItem value="Next.js">Next.js</SelectItem>
-                        <SelectItem value="Full-Stack">Full-Stack</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Year */}
-              <FormField
-                control={form.control}
-                name="year"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Year</FormLabel>
                     <FormControl>
-                      <Input placeholder="2024" {...field} maxLength={4} />
+                      <Input placeholder="e.g., Web Development" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {/* Featured */}
+              <FormField
+                control={form.control}
+                name="featured"
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-2 space-y-0 pt-6">
+                    <FormControl>
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <FormLabel className="font-normal">Featured Project</FormLabel>
+                  </FormItem>
+                )}
+              />
             </div>
 
-            {/* Live Demo */}
+            {/* Live URL */}
             <FormField
               control={form.control}
-              name="liveDemo"
+              name="live_url"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Live Demo URL (Optional)</FormLabel>
@@ -314,10 +303,10 @@ export function ProjectModal({ open, onOpenChange, project, onSave }: ProjectMod
               )}
             />
 
-            {/* GitHub */}
+            {/* GitHub URL */}
             <FormField
               control={form.control}
-              name="github"
+              name="github_url"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>GitHub URL (Optional)</FormLabel>

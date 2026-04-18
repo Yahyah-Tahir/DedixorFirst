@@ -7,15 +7,15 @@ import type { ProjectInput } from "@/lib/validations"
 
 export async function getProjects(category?: string) {
   try {
-    const projects = await db.projects.findMany(category ? { category: category as any } : undefined)
+    const projects = await db.projects.findMany(category ? { category } : undefined)
     return { success: true, data: projects }
   } catch (error) {
-    console.error("[v0] Error fetching projects:", error)
+    console.error("[Projects] Error fetching projects:", error)
     return { success: false, error: "Failed to fetch projects" }
   }
 }
 
-export async function getProjectById(id: string) {
+export async function getProjectById(id: number) {
   try {
     const project = await db.projects.findById(id)
     if (!project) {
@@ -23,7 +23,7 @@ export async function getProjectById(id: string) {
     }
     return { success: true, data: project }
   } catch (error) {
-    console.error("[v0] Error fetching project:", error)
+    console.error("[Projects] Error fetching project:", error)
     return { success: false, error: "Failed to fetch project" }
   }
 }
@@ -34,7 +34,16 @@ export async function createProject(data: ProjectInput) {
     const validatedData = projectSchema.parse(data)
 
     // Create project
-    const project = await db.projects.create(validatedData)
+    const project = await db.projects.create({
+      title: validatedData.title,
+      description: validatedData.description ?? null,
+      category: validatedData.category ?? null,
+      image: validatedData.image ?? null,
+      tech_stack: validatedData.tech_stack ?? null,
+      live_url: validatedData.live_url || null,
+      github_url: validatedData.github_url || null,
+      featured: validatedData.featured ?? false,
+    })
 
     // Revalidate pages
     revalidatePath("/projects")
@@ -42,7 +51,7 @@ export async function createProject(data: ProjectInput) {
 
     return { success: true, data: project }
   } catch (error: any) {
-    console.error("[v0] Error creating project:", error)
+    console.error("[Projects] Error creating project:", error)
 
     if (error.name === "ZodError") {
       return {
@@ -56,13 +65,22 @@ export async function createProject(data: ProjectInput) {
   }
 }
 
-export async function updateProject(id: string, data: Partial<ProjectInput>) {
+export async function updateProject(id: number, data: Partial<ProjectInput>) {
   try {
     // Validate input
     const validatedData = updateProjectSchema.parse({ ...data, id })
 
     // Update project
-    const project = await db.projects.update(id, validatedData)
+    const project = await db.projects.update(id, {
+      title: validatedData.title,
+      description: validatedData.description,
+      category: validatedData.category,
+      image: validatedData.image,
+      tech_stack: validatedData.tech_stack,
+      live_url: validatedData.live_url || null,
+      github_url: validatedData.github_url || null,
+      featured: validatedData.featured,
+    })
 
     if (!project) {
       return { success: false, error: "Project not found" }
@@ -74,7 +92,7 @@ export async function updateProject(id: string, data: Partial<ProjectInput>) {
 
     return { success: true, data: project }
   } catch (error: any) {
-    console.error("[v0] Error updating project:", error)
+    console.error("[Projects] Error updating project:", error)
 
     if (error.name === "ZodError") {
       return {
@@ -88,7 +106,7 @@ export async function updateProject(id: string, data: Partial<ProjectInput>) {
   }
 }
 
-export async function deleteProject(id: string) {
+export async function deleteProject(id: number) {
   try {
     const success = await db.projects.delete(id)
 
@@ -102,7 +120,7 @@ export async function deleteProject(id: string) {
 
     return { success: true, message: "Project deleted successfully" }
   } catch (error) {
-    console.error("[v0] Error deleting project:", error)
+    console.error("[Projects] Error deleting project:", error)
     return { success: false, error: "Failed to delete project" }
   }
 }
