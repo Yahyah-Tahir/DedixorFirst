@@ -98,8 +98,8 @@ export default function AdminLoginPage() {
           </form>
           
           <div className="mt-4 text-center text-sm text-muted-foreground">
-            <p>Default credentials: admin@dedixor.com</p>
-            <p>Password: (empty - just press enter)</p>
+            <p>Email: admin@dedixor.com</p>
+            <p>Password: admin123</p>
           </div>
         </CardContent>
       </Card>
