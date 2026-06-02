@@ -95,11 +95,28 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className="scroll-smooth">
       <head>
+        {/* Preload critical fonts */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link 
+          rel="preload" 
+          as="font"
+          href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"
+          type="font/woff2"
+        />
+        
+        {/* DNS prefetch for APIs */}
+        <link rel="dns-prefetch" href="https://api.example.com" />
+        
+        {/* Prefetch critical routes */}
+        <link rel="prefetch" href="/projects" />
+        <link rel="prefetch" href="/services" />
+        
         <CompanySchema />
       </head>
-      <body className="font-sans antialiased" >
+      <body className="font-sans antialiased bg-background" suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           {children}
           <Footer />

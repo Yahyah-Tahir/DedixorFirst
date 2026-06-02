@@ -1,7 +1,9 @@
 "use client"
 
+import { Suspense } from "react"
 import { Navigation } from "@/components/navigation"
 import { ServiceCard } from "@/components/service-card"
+import { ServicesGridSkeleton } from "@/components/loading-skeletons"
 import { motion } from "framer-motion"
 import { Server, Cloud, Sparkles, Palette } from "lucide-react"
 
@@ -97,11 +99,26 @@ export default function ServicesPage() {
           </motion.div>
 
           {/* Services Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-            {services.map((service, index) => (
-              <ServiceCard key={service.title} service={service} index={index} />
-            ))}
-          </div>
+          <Suspense fallback={<ServicesGridSkeleton />}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+              {services && Array.isArray(services) && services.length > 0 ? (
+                services.map((service, index) => {
+                  if (!service || !service.title) return null
+                  return (
+                    <ServiceCard 
+                      key={`service-${service.title}-${index}`} 
+                      service={service} 
+                      index={index} 
+                    />
+                  )
+                })
+              ) : (
+                <div className="col-span-full text-center py-12">
+                  <p className="text-muted-foreground">No services available</p>
+                </div>
+              )}
+            </div>
+          </Suspense>
 
           {/* CTA Section */}
           <motion.div
